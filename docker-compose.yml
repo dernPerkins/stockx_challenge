@@ -1,0 +1,36 @@
+version: '3.1'
+services:
+  db:
+    image: postgres
+    restart: always
+    environment:
+      - FILLA_DB_USER=stockx
+      - FILLA_DB_PASSWORD=challenge
+      - FILLA_DB_DATABASE=stockx
+      - POSTGRES_PASSWORD=example
+    volumes: 
+      - ./postgres/init:/docker-entrypoint-initdb.d/init
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+  node:
+    image: "node:8"
+    build: ./node
+    command: sh -c "npm install && npm start"
+    environment:
+      - NODE_ENV=development
+      - PORT=7000
+      - PGUSER=postgres
+      - PGHOST=localhost
+      - PGPASSWORD=example
+      - PGDATABASE=postgres
+      - PGPORT=5432
+    working_dir: /root/node
+    volumes:
+      - ./node:/root/node:cached
+    ports:
+      - '7000:7000'
+    expose:
+      - "7000"
