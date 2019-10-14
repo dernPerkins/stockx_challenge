@@ -1,22 +1,7 @@
-const { Pool, Client } = require('pg')
-// pools will use environment variables
-// for connection information
-const pool = new Pool()
-pool.query('SELECT NOW()', (err, res) => {
-  console.log(err, res)
-  pool.end()
+const { Client } = require('pg')
+const client = new Client()
+client.connect()
+client.query('SELECT $1::text as message', ['Hello world!'], (err, res) => {
+  console.log(err ? err.stack : res.rows[0].message) // Hello World!
+  client.end()
 })
-// clients will also use environment variables
-// for connection information
-async function clientConnect () {
-    const client = new Client()
-    await client.connect()
-    try {
-        const res = await client.query('SELECT NOW()')
-        console.log(res)
-        await client.end()
-    } catch(e) {
-        console.log('e:'+e)
-    }
-}
-clientConnect();
