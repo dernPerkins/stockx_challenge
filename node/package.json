@@ -4,7 +4,8 @@
   "description": "StockX Challenge NodeJS Server",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "deanperkins93@gmail.com",
@@ -13,6 +14,7 @@
     "nodemon": "^1.19.3"
   },
   "dependencies": {
+    "express": "^4.17.1",
     "pg": "^7.12.1"
   }
 }

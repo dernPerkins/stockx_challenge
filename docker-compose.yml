@@ -1,7 +1,7 @@
 version: '3.1'
 services:
   db:
-    image: postgres
+    build: "./postgres"
     restart: always
     environment:
       - POSTGRES_USER=stockx
@@ -13,15 +13,24 @@ services:
     ports:
       - 8080:8080
   node:
-    image: "node:8"
-    command: sh -c "npm install && npm start"
+    build: "./node"
+    command: npm run start
     environment:
       - NODE_ENV=development
-      - PORT=7000
-    working_dir: /root/node
+      - PORT=3000
+      - PGHOST='0.0.0.0'
+      - PGUSER=stockx
+      - PGDATABASE=stockx
+      - PGPASSWORD=challenge
+      - PGPORT=5432
+      - PGCONTAINER=db
+
+    working_dir: /usr/app
     volumes:
-      - ./node:/root/node:cached
+      - ./node:/usr/app:cached
+    depends_on:
+      - db
     ports:
-      - '7000:7000'
+      - '3000:3000'
     expose:
-      - "7000"
+      - "3000"
