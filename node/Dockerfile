@@ -1,5 +1,5 @@
 # https://blog.codeship.com/using-docker-compose-for-nodejs-development/
-FROM node:10-alpine
+FROM node:10
 
 WORKDIR /usr/app
 
@@ -8,4 +8,4 @@ RUN npm install
 
 COPY . .
 
-#EXPOSE 3000
+EXPOSE 3000

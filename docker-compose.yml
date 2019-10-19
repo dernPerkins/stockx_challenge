@@ -14,7 +14,7 @@ services:
       - 8080:8080
   node:
     build: "./node"
-    command: npm run start
+    command: npm run dev
     environment:
       - NODE_ENV=development
       - PORT=3000

@@ -15,7 +15,7 @@ const client = new Client({
 const app = express();
 app.get('/', (req, res) => {
   res.send('Hello world\n');
-}).get('/testdb', (req, res) => testDB(req, res));
+}).get('/testdbconnection', (req, res) => testDB(req, res));
 
 async function testDB(req, res) {
   try {
