@@ -18,12 +18,11 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3000
-      - PGHOST='0.0.0.0'
+      - PGHOST=db
       - PGUSER=stockx
       - PGDATABASE=stockx
       - PGPASSWORD=challenge
       - PGPORT=5432
-      - PGCONTAINER=db
 
     working_dir: /usr/app
     volumes:
