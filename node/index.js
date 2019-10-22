@@ -23,7 +23,8 @@ pool.on('error', (err, client) => {
 const app = express();
 app.get('/', (req, res) => {
   res.send('Hello world\n');
-}).get('/testdbconnection', (req, res) => testDB(req, res));
+}).get('/testdbconnection', (req, res) => testDB(req, res))
+.get('/AddShoeRating', (req, res) => );
 
 // Log Helper Function that'll attempt to log but if the logging fails, the most we can do is output to console for monitoring.
 async function log(type, message) {
@@ -63,6 +64,38 @@ async function testDB(req, res) {
     console.log(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
     res.send({ error: "Failed Connection, check the logs." });
     log(errorLogType, error.message);
+  }
+}
+
+async function addShoeRating(req, res) {
+  addShoeRating(``, [], req, res);
+}
+
+async function performQuery(query, parameters, req, res) {
+  try {
+    console.log(`Performing Query: ${query} | ${parameters}`);
+    pool.connect((err, client, done) => {
+      if (err) throw err
+      client.query(query, parameters, (error, result) => {
+        done();
+        if (error) {
+          console.log(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
+          log(errorLogType, error.message);
+          res.send({ error: "Failed Connection, check the logs." });
+          return false;
+        } else {
+          console.log(`Successful Response: { success: ${JSON.stringify(result.rows[0])} }`);
+          res.send({ success: result.rows[0] });
+          log(infoLogType, `Successful Response: { success: ${JSON.stringify(result.rows[0])} }`);
+          return true;
+        }
+      })
+    });
+  } catch (error) {
+    console.log(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
+    res.send({ error: "Failed Connection, check the logs." });
+    log(errorLogType, error.message);
+    return false;
   }
 }
 
