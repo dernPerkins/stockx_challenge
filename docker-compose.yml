@@ -14,9 +14,9 @@ services:
       - 8080:8080
   node:
     build: "./node"
-    command: npm run dev
+    command: npm run start
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=3000
       - PGHOST=db
       - PGUSER=stockx
@@ -26,7 +26,7 @@ services:
 
     working_dir: /usr/app
     volumes:
-      - ./node:/usr/app:cached
+      - ./node:/usr/app
     depends_on:
       - db
     ports:
