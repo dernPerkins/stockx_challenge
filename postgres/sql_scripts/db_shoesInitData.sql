@@ -1,0 +1,1 @@
+insert into Shoes (Name) values ('Adidas Yeezy 350 v2 Beluga');
