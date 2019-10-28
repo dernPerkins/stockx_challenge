@@ -24,7 +24,8 @@ const app = express();
 app.get('/', (req, res) => {
   res.send('Hello world\n');
 }).get('/testdbconnection', (req, res) => testDB(req, res))
-.get('/AddShoeRating', (req, res) => addShoeRating(req, res));
+.get('/AddShoeRating', (req, res) => addShoeRating(req, res))
+.get('/TrueToSizeCalculation', (req, res) => getShoeRating(req, res));
 
 // Log Helper Function that'll attempt to log but if the logging fails, the most we can do is output to console for monitoring.
 async function log(type, message) {
@@ -84,7 +85,9 @@ async function addShoeRating(req, res) {
         '' /* we should never hit this portion */} for this api call.`});
         return;
     }
-    return performQuery(``, [], req, res);
+    let result = performQuery('SELECT addShoeRating($1, $2)', [req.query.name, req.query.rating]);
+    res.send({ success: result });
+    return;
   } catch (error) {
     logError(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
     res.send({ error: "Error Occurred in addShoeRating, check the logs." });
@@ -92,9 +95,30 @@ async function addShoeRating(req, res) {
   }
 }
 
+async function getShoeRating(req, res) {
+  try {
+    // log that we hit the function and the query object
+    console.log(`hit getShoeRating(req, res) | req.query = ${JSON.stringify(req.query)}`);
+    // check that we have both of the required properties
+    let nameFound = req.query.hasOwnProperty('name');
+    if (!nameFound) {
+      res.send({ failed: `You're missing the name for this api call.`});
+      return;
+    }
+    let result = performQuery('SELECT getShoeRating($1)', [req.query.name]);
+    res.send({ result: JSON.stringify(result) });
+    console.log(JSON.stringify(result));
+    return;
+  } catch (error) {
+    logError(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
+    res.send({ error: "Error Occurred in getShoeRating, check the logs." });
+    return;
+  }
+}
+
 async function performQuery(query, parameters) {
   try {
-    console.log(`Performing Query: ${query} | ${parameters}`);
+    log(infoLogType, `Performing Query: ${query} [${parameters}]`);
     pool.connect((err, client, done) => {
       if (err) throw err
       client.query(query, parameters, (error, result) => {
@@ -103,9 +127,9 @@ async function performQuery(query, parameters) {
           logError(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
           return { error: "Failed Connection, check the logs." };
         } else {
-          log(infoLogType, `Successful Response: { success: ${JSON.stringify(result)} }`);
-          res.send({ success: result });
-          return true;
+          log(infoLogType, `Successful Response returned rowCount: ${result.rowCount}`);
+          console.log(JSON.stringify(result));
+          return result;
         }
       })
     });
