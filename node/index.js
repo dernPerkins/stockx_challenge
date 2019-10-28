@@ -29,24 +29,24 @@ app.get('/', (req, res) => {
 // Log Helper Function that'll attempt to log but if the logging fails, the most we can do is output to console for monitoring.
 async function log(type, message) {
   try {
+    console.log(`${type}: ${message}`);
     pool.connect((err, client, done) => {
       if (err) throw err
       client.query('insert into Logs (Type, Message) values ($1, $2)', [type, message], (error, result) => {
         done();
         if (error) {
-          console.log(error.stack);
+          console.log(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
         }
       })
     });
   } catch (error) {
-    console.log(error.stack);
+    console.log(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
   }
 }
 
 // Log Error Helper function since it comes up in every try catch
-async function logError(error, message) {
-  console.log(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
-  log(errorLogType, error.message);
+async function logError(message) {
+  log(errorLogType, message);
 }
 
 async function testDB(req, res) {
@@ -56,19 +56,17 @@ async function testDB(req, res) {
       client.query('select * from Shoes', (error, result) => {
         done();
         if (error) {
-          console.log(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
+          logError(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
           res.send({ error: "Failed Connection, check the logs." });
-          log(errorLogType, error.message);
         } else {
-          console.log(`Successful Response: { success: ${JSON.stringify(result.rows[0])} }`);
-          res.send({ success: result.rows[0] });
           log(infoLogType, `Successful Response: { success: ${JSON.stringify(result.rows[0])} }`);
+          res.send({ success: result.rows[0] });
         }
       })
     });
   } catch (error) {
-    logError(error, "Failed Connection, check the logs.");
-    res.send({ error: message });
+    logError("Failed Connection, check the logs.");
+    res.send({ error: "Failed Connection, check the logs." });
   }
 }
 
@@ -86,15 +84,15 @@ async function addShoeRating(req, res) {
         '' /* we should never hit this portion */} for this api call.`});
         return;
     }
-    //performQuery(``, [], req, res);
+    return performQuery(``, [], req, res);
   } catch (error) {
-    logError(error, "Error Occurred in addShoeRating, check the logs.");
-    res.send({ error: message });
+    logError(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
+    res.send({ error: "Error Occurred in addShoeRating, check the logs." });
     return;
   }
 }
 
-async function performQuery(query, parameters, req, res) {
+async function performQuery(query, parameters) {
   try {
     console.log(`Performing Query: ${query} | ${parameters}`);
     pool.connect((err, client, done) => {
@@ -102,23 +100,18 @@ async function performQuery(query, parameters, req, res) {
       client.query(query, parameters, (error, result) => {
         done();
         if (error) {
-          console.log(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
-          log(errorLogType, error.message);
-          res.send({ error: "Failed Connection, check the logs." });
-          return false;
+          logError(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
+          return { error: "Failed Connection, check the logs." };
         } else {
-          console.log(`Successful Response: { success: ${JSON.stringify(result.rows[0])} }`);
-          res.send({ success: result.rows[0] });
-          log(infoLogType, `Successful Response: { success: ${JSON.stringify(result.rows[0])} }`);
+          log(infoLogType, `Successful Response: { success: ${JSON.stringify(result)} }`);
+          res.send({ success: result });
           return true;
         }
       })
     });
   } catch (error) {
-    console.log(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
-    res.send({ error: "Failed Connection, check the logs." });
-    log(errorLogType, error.message);
-    return false;
+    logError(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
+    return { error: "Failed Connection, check the logs." };
   }
 }
 
