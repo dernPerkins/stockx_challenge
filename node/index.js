@@ -9,7 +9,6 @@ const HOST = '0.0.0.0';
 const pool = new Pool()
 const errorLogType = 'Error';
 const infoLogType = 'Info';
-const debugLogType = 'Debug';
 
 // the pool will emit an error on behalf of any idle clients
 // it contains if a backend error or network partition happens
@@ -24,8 +23,8 @@ const app = express();
 app.get('/', (req, res) => {
   res.send('Hello world\n');
 }).get('/testdbconnection', (req, res) => testDB(req, res))
-.get('/AddShoeRating', (req, res) => addShoeRating(req, res))
-.get('/TrueToSizeCalculation', (req, res) => getShoeRating(req, res));
+.get('/TrueToSizeCalculation', (req, res) => getShoeRating(req, res))
+.put('/AddShoeRating', (req, res) => addShoeRating(req, res));
 
 // Log Helper Function that'll attempt to log but if the logging fails, the most we can do is output to console for monitoring.
 async function log(type, message) {
@@ -75,7 +74,7 @@ async function addShoeRating(req, res) {
   try {
     // log that we hit the function and the query object
     console.log(`hit addShoeRating(req, res) | req.query = ${JSON.stringify(req.query)}`);
-    // check that we have both of the required properties
+    // check that we have both of the required properties and they're the correct values
     let nameFound = req.query.hasOwnProperty('name');
     let ratingFound = req.query.hasOwnProperty('rating');
     if (!nameFound || !ratingFound) {
@@ -85,13 +84,25 @@ async function addShoeRating(req, res) {
         '' /* we should never hit this portion */} for this api call.`});
         return;
     }
-    let result = performQuery('SELECT addShoeRating($1, $2)', [req.query.name, req.query.rating]);
-    res.send({ success: result });
-    return;
+    if (Number.isInteger(req.query.rating) && 0 < req.query.rating <= 5) {
+      res.send({ failed: 'The rating parameter value must be a integer between 1 and 5.' });
+      return;
+    }
+    if (req.query.name.length >= 128) {
+      res.send({ failed: 'The name parameter value must be a length 128 or lower.' });
+      return;
+    }
+    performQuery('SELECT addShoeRating($1, $2)', [req.query.name, req.query.rating], function (success, result) {
+      if (success) {
+        // If the call succeeds, return success
+        res.send({ AddShoeRating: result.rows[0].addshoerating});
+      } else {
+        res.send({ error: 'Call Failed', result: result });
+      }
+    });
   } catch (error) {
     logError(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
     res.send({ error: "Error Occurred in addShoeRating, check the logs." });
-    return;
   }
 }
 
@@ -99,24 +110,35 @@ async function getShoeRating(req, res) {
   try {
     // log that we hit the function and the query object
     console.log(`hit getShoeRating(req, res) | req.query = ${JSON.stringify(req.query)}`);
-    // check that we have both of the required properties
+    // check that we have both of the required properties and they're the correct values
     let nameFound = req.query.hasOwnProperty('name');
     if (!nameFound) {
       res.send({ failed: `You're missing the name for this api call.`});
       return;
     }
-    let result = performQuery('SELECT getShoeRating($1)', [req.query.name]);
-    res.send({ result: JSON.stringify(result) });
-    console.log(JSON.stringify(result));
-    return;
+    if (req.query.name.length >= 128) {
+      res.send({ failed: 'The name parameter value must be a length 128 or lower.' });
+      return;
+    }
+    performQuery('SELECT getShoeRating($1)', [req.query.name], function (success, result) {
+      if (success) {
+        // If the call succeeds, return the calculation as long as the value isn't -1
+        if (result.rows[0].getshoerating > 0) {
+          res.send({ TrueToSizeCalcuation: result.rows[0].getshoerating});
+        } else {
+          res.send({ failed: 'Could not find the name you requested.' });
+        }
+      } else {
+        res.send({ error: 'Call Failed', result: result });
+      }
+    });
   } catch (error) {
     logError(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
     res.send({ error: "Error Occurred in getShoeRating, check the logs." });
-    return;
   }
 }
 
-async function performQuery(query, parameters) {
+async function performQuery(query, parameters, callback) {
   try {
     log(infoLogType, `Performing Query: ${query} [${parameters}]`);
     pool.connect((err, client, done) => {
@@ -125,17 +147,16 @@ async function performQuery(query, parameters) {
         done();
         if (error) {
           logError(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
-          return { error: "Failed Connection, check the logs." };
+          return callback(false, "Failed Connection, check the logs.");
         } else {
           log(infoLogType, `Successful Response returned rowCount: ${result.rowCount}`);
-          console.log(JSON.stringify(result));
-          return result;
+          return callback(true, result);
         }
       })
     });
   } catch (error) {
     logError(`Error Message: ${error.message}; Error Stack: ${error.stack}`);
-    return { error: "Failed Connection, check the logs." };
+    return callback(false, "Failed Connection, check the logs.");
   }
 }
 

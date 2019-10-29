@@ -1,5 +1,5 @@
 # https://blog.codeship.com/using-docker-compose-for-nodejs-development/
-FROM node:10
+FROM node:10-slim
 
 WORKDIR /usr/app
 
