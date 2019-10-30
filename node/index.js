@@ -84,7 +84,7 @@ async function addShoeRating(req, res) {
         '' /* we should never hit this portion */} for this api call.`});
         return;
     }
-    if (Number.isInteger(req.query.rating) && 0 < req.query.rating <= 5) {
+    if (Number.isInteger(req.query.rating) || 0 < req.query.rating <= 5) {
       res.send({ failed: 'The rating parameter value must be a integer between 1 and 5.' });
       return;
     }

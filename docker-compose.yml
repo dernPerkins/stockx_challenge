@@ -23,10 +23,6 @@ services:
       - PGDATABASE=stockx
       - PGPASSWORD=challenge
       - PGPORT=5432
-
-    working_dir: /usr/app
-    volumes:
-      - ./node:/usr/app
     depends_on:
       - db
     ports:
